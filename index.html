@@ -547,7 +547,7 @@
         <img src="https://images.squarespace-cdn.com/content/v1/67cdc15c698e563f85384909/7445b1a7-1987-47c2-b3d3-dcbbafde5160/1000027079.png?format=1500w">
         <div class="logo-text">MedCourse PRO</div>
       </div>
-      <div class="title">MEDICAL BILL NAVIGATOR FOR PATIENTS</div>
+      <div class="title">MEDICAL BILL NAVIGATOR</div>
     </div>
 
     <!-- 🆕 FREEMIUM STATUS BAR -->
@@ -682,7 +682,7 @@
     let isFreemium = true; // Set this to false for paid users
     
     // Base URL for the backend
-    const BACKEND_URL = "https://medical-bill-navigator-patient-backend.vercel.app/api/download";
+    const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/patient-chat";
 
     // 🆕 FREEMIUM FUNCTIONS
     function updateFreemiumStatus(remaining, upgradeUrl) {
@@ -910,7 +910,7 @@
       function downloadLetter() {
         if (!lastLetter) return alert("No letter to download yet.");
         try {
-          fetch("https://medical-bill-navigator-patient-backend.vercel.app/api/download", {
+          fetch("https://medical-navigator-freemium-backend.vercel.app/api/download", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ letterContent: lastLetter }),
@@ -956,7 +956,7 @@
         try {
           // 🔐 FREEMIUM SESSION MANAGEMENT
           const apiEndpoint = isFreemium ? '/api/freemium-chat' : '/api/chat';
-          const backendUrl = `https://medical-bill-navigator-patient-backend.vercel.app${apiEndpoint}`;
+          const backendUrl = `https://medical-navigator-freemium-backend.vercel.app${apiEndpoint}`;
 
           const requestBody = {
             messages: messageHistory,
