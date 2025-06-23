@@ -682,7 +682,7 @@
     let isFreemium = true; // Set this to false for paid users
     
     // Base URL for the backend
-    const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/freemium-chat";
+    const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/chat";
 
     // 🆕 FREEMIUM FUNCTIONS
     function updateFreemiumStatus(remaining, upgradeUrl) {
@@ -955,8 +955,7 @@
 
         try {
           // 🔐 FREEMIUM SESSION MANAGEMENT
-          const apiEndpoint = isFreemium ? '/api/freemium-chat' : '/api/chat';
-          const backendUrl = `https://medical-navigator-freemium-backend.vercel.app${apiEndpoint}`;
+          const backendUrl = `https://medical-navigator-freemium-backend.vercel.app/api/chat`;
 
           const requestBody = {
             messages: messageHistory,
