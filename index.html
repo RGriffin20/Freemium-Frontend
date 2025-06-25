@@ -673,6 +673,8 @@
   </div>
 
   <script>
+    let lastLetter = "";
+    let uploadedFile = null;
     let typingInterval;
     let lastLetter = "";
     let uploadedFile = null;
@@ -690,22 +692,37 @@
       const statusText = document.getElementById('statusText');
       const upgradeBtn = document.getElementById('upgradeBtn');
       
-      if (remaining === null || remaining === undefined) {
-        statusBar.style.display = 'none';
-        return;
-      }
+  if (remaining === null || remaining === undefined) {
+    statusBar.style.display = 'none';
+    return;
+  }
       
-      statusBar.style.display = 'flex';
-      upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
-      
-      if (remaining === 0) {
-        statusBar.className = 'freemium-status warning';
-        statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
-      } else {
-        statusBar.className = 'freemium-status';
-        statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
-      }
+     if (remaining === 0) {
+    statusBar.className = 'freemium-status warning';
+    statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
+    
+    // Disable input when no messages remaining
+    const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    if (input) {
+      input.disabled = true;
+      input.placeholder = 'Upgrade to continue chatting...';
     }
+    if (sendBtn) {
+      sendBtn.disabled = true;
+    }
+    
+    // Show upgrade modal after a short delay
+    setTimeout(() => showUpgradeModal(), 2000);
+    
+  } else if (remaining === 1) {
+    statusBar.className = 'freemium-status warning';
+    statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
+  } else {
+    statusBar.className = 'freemium-status';
+    statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
+  }
+}
 
     function showUpgradeModal() {
       document.getElementById('upgradeModal').classList.add('show');
@@ -721,6 +738,229 @@
         closeUpgradeModal();
       }
     });
+statusBar.style.display = 'flex';
+  upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
+  
+  if (remaining === 0) {
+    statusBar.className = 'freemium-status warning';
+    statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
+    
+    // Disable input when no messages remaining
+    const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    if (input) {
+      input.disabled = true;
+      input.placeholder = 'Upgrade to continue chatting...';
+    }
+    if (sendBtn) {
+      sendBtn.disabled = true;
+    }
+    
+    // Show upgrade modal after a short delay
+    setTimeout(() => showUpgradeModal(), 2000);
+    
+  } else if (remaining === 1) {
+    statusBar.className = 'freemium-status warning';
+    statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
+  } else {
+    statusBar.className = 'freemium-status';
+    statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
+  }
+}
+
+// 🚫 Block Premium Features
+function blockPremiumFeature(featureType) {
+  const chat = document.getElementById('chat');
+  const blockMessage = document.createElement("div");
+  blockMessage.className = "message bot";
+  blockMessage.innerHTML = `
+    <h3>💎 Premium Feature</h3>
+    <p><strong>${featureType}</strong> is available with our full version.</p>
+    <p>🔓 <strong>Upgrade for unlimited access to:</strong></p>
+    <ul>
+      <li>Document analysis & uploads</li>
+      <li>Advanced billing guidance</li>
+      <li>Professional appeal letters</li>
+      <li>Live policy lookups</li>
+    </ul>
+    <p><a href="https://www.medcoursepro.com/forpatients" target="_blank" style="color: #4a90e2; font-weight: bold;">Get Full Access →</a></p>
+  `;
+  chat.appendChild(blockMessage);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// 🆕 Enhanced Send Message Function
+async function sendMessage() {
+  const message = input.value.trim();
+  if (!message) return;
+
+  // Check if session is expired (no messages remaining)
+  if (messagesRemaining === 0) {
+    showUpgradeModal();
+    return;
+  }
+
+  // 🚫 Check for premium features in user input
+  const premiumTriggers = [
+    'upload', 'document', 'pdf', 'denial', 'appeal', 'cpt code', 
+    'claim number', 'modifier', 'search policy', 'look up regulation'
+  ];
+  
+  const hasPremiumTrigger = premiumTriggers.some(trigger => 
+    message.toLowerCase().includes(trigger.toLowerCase())
+  );
+
+  if (hasPremiumTrigger && isFreemium) {
+    addMessage("You", message, "user");
+    input.value = "";
+    blockPremiumFeature("Advanced Billing Analysis");
+    return;
+  }
+
+  addMessage("You", message, "user");
+  input.value = "";
+  messageHistory.push({ role: "user", content: message });
+
+  showTyping();
+
+  try {
+    const requestBody = {
+      messages: messageHistory,
+      sessionToken: sessionToken
+    };
+
+    // 🚫 Block file uploads for freemium
+    if (uploadedFile && isFreemium) {
+      removeTyping();
+      blockPremiumFeature("Document Upload");
+      uploadedFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('fileLabel').textContent = '';
+      return;
+    }
+
+    // Add file if present (for paid users)
+    if (uploadedFile) {
+      requestBody.fileBuffer = uploadedFile.base64;
+      requestBody.fileType = uploadedFile.type;
+      requestBody.fileName = uploadedFile.name;
+      uploadedFile = null;
+    }
+
+    console.log("📤 Sending request:", {
+      hasMessages: !!requestBody.messages,
+      sessionToken: sessionToken ? sessionToken.slice(0, 8) + '...' : 'none',
+      messagesRemaining: messagesRemaining
+    });
+
+    const response = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Session-Token": sessionToken || ''
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) throw new Error("Network response was not OK");
+
+    const data = await response.json();
+    console.log("📥 Response received:", data);
+
+    // 🆔 Store session token
+    if (data.sessionToken) {
+      sessionToken = data.sessionToken;
+      localStorage.setItem('freemium-session', sessionToken);
+    }
+
+    // 🚀 Handle upgrade prompts
+    if (data.isUpgradePrompt) {
+      setTimeout(() => showUpgradeModal(), 1000);
+    }
+
+    // 📊 Update freemium status
+    if (typeof data.messagesRemaining === 'number') {
+      messagesRemaining = data.messagesRemaining;
+      updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    removeTyping();
+    vibrateIfActive();
+
+    messageHistory.push({ role: "assistant", content: data.reply });
+    addMessage("Navigator", data.reply, "bot");
+
+  } catch (error) {
+    removeTyping();
+    addMessage("Error", error.message, "bot");
+    console.error('Chat error:', error);
+  }
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// 🆕 Enhanced File Input Handler
+document.getElementById('fileInput').addEventListener('change', async () => {
+  const file = document.getElementById('fileInput').files[0];
+  if (!file) return;
+
+  // 🚫 Block file uploads for freemium users
+  if (isFreemium) {
+    document.getElementById('fileInput').value = ''; // Clear the input
+    blockPremiumFeature("Document Upload & Analysis");
+    return;
+  }
+
+  // Regular file handling for paid users...
+  console.log("📁 File selected:", file.name, file.type, file.size);
+  // ... rest of file handling code
+});
+
+// 🆕 Enhanced Welcome Message Trigger
+setTimeout(() => {
+  if (isFreemium) {
+    console.log("🐛 Triggering welcome for freemium user");
+    
+    fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Session-Token": sessionToken || ''
+      },
+      body: JSON.stringify({
+        messages: messageHistory,
+        sessionToken: sessionToken
+      }),
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to get welcome message");
+      return response.json();
+    })
+    .then(data => {
+      console.log("🎉 Welcome response received:", data);
+      
+      if (data.sessionToken) {
+        sessionToken = data.sessionToken;
+        localStorage.setItem('freemium-session', sessionToken);
+      }
+      
+      if (typeof data.messagesRemaining === 'number') {
+        messagesRemaining = data.messagesRemaining;
+        updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+      }
+      
+      messageHistory.push({ role: "assistant", content: data.reply });
+      addMessage("Navigator", data.reply, "bot");
+    })
+    .catch(error => {
+      console.error('Welcome message error:', error);
+      addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
+    });
+  } else {
+    addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
+  }
+}, 500);
 
     function showTyping() {
       const chat = document.getElementById("chat");
