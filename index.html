@@ -271,6 +271,11 @@
       outline: none;
     }
 
+    #userInput:disabled {
+      background-color: #f5f5f5;
+      color: #999;
+    }
+
     button.send-btn {
       padding: 0 20px;
       background-color: #4a90e2;
@@ -283,6 +288,11 @@
 
     button.send-btn:hover {
       background-color: #3a7bc8;
+    }
+
+    button.send-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
     }
 
     .side-buttons {
@@ -673,56 +683,64 @@
   </div>
 
   <script>
-    let lastLetter = "";
-    let uploadedFile = null;
+    // 🆕 Clean Variable Declarations
     let typingInterval;
     let lastLetter = "";
     let uploadedFile = null;
-    // 🆕 FREEMIUM VARIABLES
     let sessionToken = localStorage.getItem('freemium-session') || null;
     let messagesRemaining = null;
-    let isFreemium = true; // Set this to false for paid users
+    let isFreemium = true;
     
-    // Base URL for the backend
     const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/chat";
 
-    // 🆕 FREEMIUM FUNCTIONS
+    // Message history for chat
+    const messageHistory = [
+      {
+        role: 'system',
+        content: `You are the user's Medical Bill Navigator. Be clear, kind, and helpful. Speak at a 6th-grade reading level. Format responses with <h3> for headings, short <p> paragraphs, and bullet/numbered lists as needed.`
+      }
+    ];
+
+    // 🆕 Enhanced Freemium Status Update
     function updateFreemiumStatus(remaining, upgradeUrl) {
       const statusBar = document.getElementById('freemiumStatus');
       const statusText = document.getElementById('statusText');
       const upgradeBtn = document.getElementById('upgradeBtn');
       
-  if (remaining === null || remaining === undefined) {
-    statusBar.style.display = 'none';
-    return;
-  }
+      if (remaining === null || remaining === undefined) {
+        statusBar.style.display = 'none';
+        return;
+      }
       
-     if (remaining === 0) {
-    statusBar.className = 'freemium-status warning';
-    statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
-    
-    // Disable input when no messages remaining
-    const input = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    if (input) {
-      input.disabled = true;
-      input.placeholder = 'Upgrade to continue chatting...';
+      statusBar.style.display = 'flex';
+      upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
+      
+      if (remaining === 0) {
+        statusBar.className = 'freemium-status warning';
+        statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
+        
+        // Disable input when no messages remaining
+        const input = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        if (input) {
+          input.disabled = true;
+          input.placeholder = 'Upgrade to continue chatting...';
+        }
+        if (sendBtn) {
+          sendBtn.disabled = true;
+        }
+        
+        // Show upgrade modal after a short delay
+        setTimeout(() => showUpgradeModal(), 2000);
+        
+      } else if (remaining === 1) {
+        statusBar.className = 'freemium-status warning';
+        statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
+      } else {
+        statusBar.className = 'freemium-status';
+        statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
+      }
     }
-    if (sendBtn) {
-      sendBtn.disabled = true;
-    }
-    
-    // Show upgrade modal after a short delay
-    setTimeout(() => showUpgradeModal(), 2000);
-    
-  } else if (remaining === 1) {
-    statusBar.className = 'freemium-status warning';
-    statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
-  } else {
-    statusBar.className = 'freemium-status';
-    statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
-  }
-}
 
     function showUpgradeModal() {
       document.getElementById('upgradeModal').classList.add('show');
@@ -738,229 +756,27 @@
         closeUpgradeModal();
       }
     });
-statusBar.style.display = 'flex';
-  upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
-  
-  if (remaining === 0) {
-    statusBar.className = 'freemium-status warning';
-    statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
-    
-    // Disable input when no messages remaining
-    const input = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    if (input) {
-      input.disabled = true;
-      input.placeholder = 'Upgrade to continue chatting...';
+
+    // 🚫 Block Premium Features
+    function blockPremiumFeature(featureType) {
+      const chat = document.getElementById('chat');
+      const blockMessage = document.createElement("div");
+      blockMessage.className = "message bot";
+      blockMessage.innerHTML = `
+        <h3>💎 Premium Feature</h3>
+        <p><strong>${featureType}</strong> is available with our full version.</p>
+        <p>🔓 <strong>Upgrade for unlimited access to:</strong></p>
+        <ul>
+          <li>Document analysis & uploads</li>
+          <li>Advanced billing guidance</li>
+          <li>Professional appeal letters</li>
+          <li>Live policy lookups</li>
+        </ul>
+        <p><a href="https://www.medcoursepro.com/forpatients" target="_blank" style="color: #4a90e2; font-weight: bold;">Get Full Access →</a></p>
+      `;
+      chat.appendChild(blockMessage);
+      chat.scrollTop = chat.scrollHeight;
     }
-    if (sendBtn) {
-      sendBtn.disabled = true;
-    }
-    
-    // Show upgrade modal after a short delay
-    setTimeout(() => showUpgradeModal(), 2000);
-    
-  } else if (remaining === 1) {
-    statusBar.className = 'freemium-status warning';
-    statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
-  } else {
-    statusBar.className = 'freemium-status';
-    statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
-  }
-}
-
-// 🚫 Block Premium Features
-function blockPremiumFeature(featureType) {
-  const chat = document.getElementById('chat');
-  const blockMessage = document.createElement("div");
-  blockMessage.className = "message bot";
-  blockMessage.innerHTML = `
-    <h3>💎 Premium Feature</h3>
-    <p><strong>${featureType}</strong> is available with our full version.</p>
-    <p>🔓 <strong>Upgrade for unlimited access to:</strong></p>
-    <ul>
-      <li>Document analysis & uploads</li>
-      <li>Advanced billing guidance</li>
-      <li>Professional appeal letters</li>
-      <li>Live policy lookups</li>
-    </ul>
-    <p><a href="https://www.medcoursepro.com/forpatients" target="_blank" style="color: #4a90e2; font-weight: bold;">Get Full Access →</a></p>
-  `;
-  chat.appendChild(blockMessage);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// 🆕 Enhanced Send Message Function
-async function sendMessage() {
-  const message = input.value.trim();
-  if (!message) return;
-
-  // Check if session is expired (no messages remaining)
-  if (messagesRemaining === 0) {
-    showUpgradeModal();
-    return;
-  }
-
-  // 🚫 Check for premium features in user input
-  const premiumTriggers = [
-    'upload', 'document', 'pdf', 'denial', 'appeal', 'cpt code', 
-    'claim number', 'modifier', 'search policy', 'look up regulation'
-  ];
-  
-  const hasPremiumTrigger = premiumTriggers.some(trigger => 
-    message.toLowerCase().includes(trigger.toLowerCase())
-  );
-
-  if (hasPremiumTrigger && isFreemium) {
-    addMessage("You", message, "user");
-    input.value = "";
-    blockPremiumFeature("Advanced Billing Analysis");
-    return;
-  }
-
-  addMessage("You", message, "user");
-  input.value = "";
-  messageHistory.push({ role: "user", content: message });
-
-  showTyping();
-
-  try {
-    const requestBody = {
-      messages: messageHistory,
-      sessionToken: sessionToken
-    };
-
-    // 🚫 Block file uploads for freemium
-    if (uploadedFile && isFreemium) {
-      removeTyping();
-      blockPremiumFeature("Document Upload");
-      uploadedFile = null;
-      document.getElementById('fileInput').value = '';
-      document.getElementById('fileLabel').textContent = '';
-      return;
-    }
-
-    // Add file if present (for paid users)
-    if (uploadedFile) {
-      requestBody.fileBuffer = uploadedFile.base64;
-      requestBody.fileType = uploadedFile.type;
-      requestBody.fileName = uploadedFile.name;
-      uploadedFile = null;
-    }
-
-    console.log("📤 Sending request:", {
-      hasMessages: !!requestBody.messages,
-      sessionToken: sessionToken ? sessionToken.slice(0, 8) + '...' : 'none',
-      messagesRemaining: messagesRemaining
-    });
-
-    const response = await fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Session-Token": sessionToken || ''
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) throw new Error("Network response was not OK");
-
-    const data = await response.json();
-    console.log("📥 Response received:", data);
-
-    // 🆔 Store session token
-    if (data.sessionToken) {
-      sessionToken = data.sessionToken;
-      localStorage.setItem('freemium-session', sessionToken);
-    }
-
-    // 🚀 Handle upgrade prompts
-    if (data.isUpgradePrompt) {
-      setTimeout(() => showUpgradeModal(), 1000);
-    }
-
-    // 📊 Update freemium status
-    if (typeof data.messagesRemaining === 'number') {
-      messagesRemaining = data.messagesRemaining;
-      updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 500));
-    removeTyping();
-    vibrateIfActive();
-
-    messageHistory.push({ role: "assistant", content: data.reply });
-    addMessage("Navigator", data.reply, "bot");
-
-  } catch (error) {
-    removeTyping();
-    addMessage("Error", error.message, "bot");
-    console.error('Chat error:', error);
-  }
-
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// 🆕 Enhanced File Input Handler
-document.getElementById('fileInput').addEventListener('change', async () => {
-  const file = document.getElementById('fileInput').files[0];
-  if (!file) return;
-
-  // 🚫 Block file uploads for freemium users
-  if (isFreemium) {
-    document.getElementById('fileInput').value = ''; // Clear the input
-    blockPremiumFeature("Document Upload & Analysis");
-    return;
-  }
-
-  // Regular file handling for paid users...
-  console.log("📁 File selected:", file.name, file.type, file.size);
-  // ... rest of file handling code
-});
-
-// 🆕 Enhanced Welcome Message Trigger
-setTimeout(() => {
-  if (isFreemium) {
-    console.log("🐛 Triggering welcome for freemium user");
-    
-    fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Session-Token": sessionToken || ''
-      },
-      body: JSON.stringify({
-        messages: messageHistory,
-        sessionToken: sessionToken
-      }),
-    })
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to get welcome message");
-      return response.json();
-    })
-    .then(data => {
-      console.log("🎉 Welcome response received:", data);
-      
-      if (data.sessionToken) {
-        sessionToken = data.sessionToken;
-        localStorage.setItem('freemium-session', sessionToken);
-      }
-      
-      if (typeof data.messagesRemaining === 'number') {
-        messagesRemaining = data.messagesRemaining;
-        updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
-      }
-      
-      messageHistory.push({ role: "assistant", content: data.reply });
-      addMessage("Navigator", data.reply, "bot");
-    })
-    .catch(error => {
-      console.error('Welcome message error:', error);
-      addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
-    });
-  } else {
-    addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
-  }
-}, 500);
 
     function showTyping() {
       const chat = document.getElementById("chat");
@@ -993,19 +809,224 @@ setTimeout(() => {
       }
     }
 
+    // 🆕 Enhanced Send Message Function
+    async function sendMessage() {
+      const input = document.getElementById('userInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Check if session is expired (no messages remaining)
+      if (messagesRemaining === 0) {
+        showUpgradeModal();
+        return;
+      }
+
+      // 🚫 Check for premium features in user input
+      const premiumTriggers = [
+        'upload', 'document', 'pdf', 'denial', 'appeal', 'cpt code', 
+        'claim number', 'modifier', 'search policy', 'look up regulation'
+      ];
+      
+      const hasPremiumTrigger = premiumTriggers.some(trigger => 
+        message.toLowerCase().includes(trigger.toLowerCase())
+      );
+
+      if (hasPremiumTrigger && isFreemium) {
+        addMessage("You", message, "user");
+        input.value = "";
+        blockPremiumFeature("Advanced Billing Analysis");
+        return;
+      }
+
+      addMessage("You", message, "user");
+      input.value = "";
+      messageHistory.push({ role: "user", content: message });
+
+      showTyping();
+
+      try {
+        const requestBody = {
+          messages: messageHistory,
+          sessionToken: sessionToken
+        };
+
+        // 🚫 Block file uploads for freemium
+        if (uploadedFile && isFreemium) {
+          removeTyping();
+          blockPremiumFeature("Document Upload");
+          uploadedFile = null;
+          document.getElementById('fileInput').value = '';
+          document.getElementById('fileLabel').textContent = '';
+          return;
+        }
+
+        // Add file if present (for paid users)
+        if (uploadedFile) {
+          requestBody.fileBuffer = uploadedFile.base64;
+          requestBody.fileType = uploadedFile.type;
+          requestBody.fileName = uploadedFile.name;
+          uploadedFile = null;
+        }
+
+        const response = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "X-Session-Token": sessionToken || ''
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) throw new Error("Network response was not OK");
+
+        const data = await response.json();
+
+        // 🆔 Store session token
+        if (data.sessionToken) {
+          sessionToken = data.sessionToken;
+          localStorage.setItem('freemium-session', sessionToken);
+        }
+
+        // 🚀 Handle upgrade prompts
+        if (data.isUpgradePrompt) {
+          setTimeout(() => showUpgradeModal(), 1000);
+        }
+
+        // 📊 Update freemium status
+        if (typeof data.messagesRemaining === 'number') {
+          messagesRemaining = data.messagesRemaining;
+          updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        removeTyping();
+        vibrateIfActive();
+
+        messageHistory.push({ role: "assistant", content: data.reply });
+        addMessage("Navigator", data.reply, "bot");
+
+        // Handle letter download offers
+        if (data.offerDownload) {
+          lastLetter = data.reply;
+          const downloadBtn = document.getElementById('downloadLetterBtn');
+          if (downloadBtn) {
+            downloadBtn.style.display = "inline-block";
+          }
+        }
+
+      } catch (error) {
+        removeTyping();
+        addMessage("Error", error.message, "bot");
+        console.error('Chat error:', error);
+      }
+
+      document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+    }
+
+    function addMessage(sender, text, type) {
+      const chat = document.getElementById('chat');
+      const messageContainer = document.createElement("div");
+      messageContainer.className = "message-container";
+      messageContainer.setAttribute("role", "group");
+      messageContainer.setAttribute("aria-label", `Message from ${sender}`);
+      
+      const msg = document.createElement("div");
+      msg.className = `message ${type}`;
+      
+      // Don't show "Navigator:" for bot messages to match the design
+      const senderText = type === "bot" ? "" : `<strong>${sender}:</strong><br>`;
+      msg.innerHTML = `${senderText}${formatMarkdown(text)}`;
+      
+      messageContainer.appendChild(msg);
+      chat.appendChild(messageContainer);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function formatMarkdown(text) {
+      return text
+        .replace(/^### (.*$)/gim, "<h3>$1</h3>")
+        .replace(/^## (.*$)/gim, "<h2>$1</h2>")
+        .replace(/^# (.*$)/gim, "<h1>$1</h1>")
+        .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
+        .replace(/\*(.*?)\*/gim, "<em>$1</em>")
+        .replace(/^- (.*$)/gim, "<ul><li>$1</li></ul>")
+        .replace(/\n/g, "<br>");
+    }
+
+    function presetMessage(text) {
+      const input = document.getElementById('userInput');
+      input.value = text;
+      sendMessage();
+    }
+
+    function downloadLetter() {
+      if (!lastLetter) return alert("No letter to download yet.");
+      try {
+        fetch("https://medical-navigator-freemium-backend.vercel.app/api/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ letterContent: lastLetter }),
+        })
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to generate letter");
+          return response.blob();
+        })
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "appeal-letter.docx";
+          a.click();
+          window.URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+          alert("Something went wrong downloading the letter.");
+          console.error(err);
+        });
+      } catch (err) {
+        alert("Something went wrong downloading the letter.");
+        console.error(err);
+      }
+    }
+
+    function downloadChat() {
+      const messages = document.querySelectorAll(".message");
+      let chatContent = "Medical Bill Navigator Chat\n\n";
+
+      messages.forEach((msg) => {
+        const text = msg.innerText || msg.textContent;
+        chatContent += text + "\n\n";
+      });
+
+      const blob = new Blob([chatContent], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "medical-bill-chat.txt";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Handle mobile/desktop view automatically
+    function handleViewportChange() {
+      const mobileButtons = document.querySelector('.mobile-buttons');
+      const sideButtons = document.querySelector('.side-buttons');
+      
+      if (window.innerWidth <= 768) {
+        if (mobileButtons) mobileButtons.style.display = 'grid';
+        if (sideButtons) sideButtons.style.display = 'none';
+      } else {
+        if (mobileButtons) mobileButtons.style.display = 'none';
+        if (sideButtons) sideButtons.style.display = 'flex';
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const chat = document.getElementById('chat');
       const input = document.getElementById('userInput');
       const fileInput = document.getElementById('fileInput');
       const fileLabel = document.getElementById('fileLabel');
       const downloadBtn = document.getElementById('downloadLetterBtn');
-
-      const messageHistory = [
-        {
-          role: 'system',
-          content: `You are the user's Medical Bill Navigator. Be clear, kind, and helpful. Speak at a 6th-grade reading level. Format responses with <h3> for headings, short <p> paragraphs, and bullet/numbered lists as needed.`
-        }
-      ];
 
       // Force fix any overlay issues that might block buttons
       function forceFixOverlays() {
@@ -1097,12 +1118,19 @@ setTimeout(() => {
         }
       });
 
+      // 🆕 Enhanced File Input Handler with Freemium Blocking
       fileInput.addEventListener('change', async () => {
         const file = fileInput.files[0];
         if (!file) return;
 
-        console.log("📁 File selected:", file.name, file.type, file.size);
+        // 🚫 Block file uploads for freemium users
+        if (isFreemium) {
+          fileInput.value = ''; // Clear the input
+          blockPremiumFeature("Document Upload & Analysis");
+          return;
+        }
 
+        console.log("📁 File selected:", file.name, file.type, file.size);
         fileLabel.textContent = `Uploaded: ${file.name}`;
         addMessage("You", `Uploaded file: ${file.name}`, "user");
 
@@ -1147,263 +1175,55 @@ setTimeout(() => {
         downloadBtn.addEventListener('click', downloadLetter);
       }
 
-      function downloadLetter() {
-        if (!lastLetter) return alert("No letter to download yet.");
-        try {
-          fetch("https://medical-navigator-freemium-backend.vercel.app/api/download", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ letterContent: lastLetter }),
-          })
-          .then(response => {
-            if (!response.ok) throw new Error("Failed to generate letter");
-            return response.blob();
-          })
-          .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "appeal-letter.docx";
-            a.click();
-            window.URL.revokeObjectURL(url);
-          })
-          .catch(err => {
-            alert("Something went wrong downloading the letter.");
-            console.error(err);
-          });
-        } catch (err) {
-          alert("Something went wrong downloading the letter.");
-          console.error(err);
-        }
-      }
-
-      function presetMessage(text) {
-        input.value = text;
-        sendMessage();
-      }
-
-      // 🆕 UPDATED SEND MESSAGE FUNCTION WITH FREEMIUM SUPPORT
-      async function sendMessage() {
-        const message = input.value.trim();
-        if (!message) return;
-
-        addMessage("You", message, "user");
-        input.value = "";
-        messageHistory.push({ role: "user", content: message });
-
-        showTyping();
-
-        try {
-          // 🔐 FREEMIUM SESSION MANAGEMENT
-          const backendUrl = `https://medical-navigator-freemium-backend.vercel.app/api/chat`;
-
-          const requestBody = {
-            messages: messageHistory,
-            sessionToken: sessionToken
-          };
-
-          // Add file upload data if present
-          if (uploadedFile) {
-            console.log("📤 Sending file with message:", uploadedFile);
-            
-            requestBody.fileBuffer = uploadedFile.base64;
-            requestBody.fileType = uploadedFile.type;
-            requestBody.fileName = uploadedFile.name;
-            uploadedFile = null; // reset after use
-          }
-
-          console.log("📤 Request body:", {
-            hasMessages: !!requestBody.messages,
-            hasFileBuffer: !!requestBody.fileBuffer,
-            fileType: requestBody.fileType,
-            fileName: requestBody.fileName,
-            sessionToken: sessionToken ? sessionToken.slice(0, 8) + '...' : 'none'
-          });
-
-          const response = await fetch(backendUrl, {
+      // 🆕 Enhanced Welcome Message Trigger
+      setTimeout(() => {
+        if (isFreemium) {
+          console.log("🐛 Triggering welcome for freemium user");
+          
+          fetch(BACKEND_URL, {
             method: "POST",
             headers: { 
               "Content-Type": "application/json",
-              "X-Session-Token": sessionToken || '' // Add session token header
+              "X-Session-Token": sessionToken || ''
             },
-            body: JSON.stringify(requestBody),
-          });
-
-          if (!response.ok) throw new Error("Network response was not OK");
-
-          const data = await response.json();
-
-          // 🆔 Store new session token if provided
-          if (data.sessionToken) {
-            sessionToken = data.sessionToken;
-            localStorage.setItem('freemium-session', sessionToken);
-            console.log("🆔 Session token updated:", sessionToken.slice(0, 8) + '...');
-          }
-
-          // 🚀 Handle upgrade prompts and modals
-          if (data.isUpgradePrompt) {
-            setTimeout(() => showUpgradeModal(), 1000); // Show modal after message displays
-          }
-
-          // 📊 Update freemium status
-          if (isFreemium && typeof data.messagesRemaining === 'number') {
-            messagesRemaining = data.messagesRemaining;
-            updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 500));
-          removeTyping();
-          vibrateIfActive();
-
-          messageHistory.push({ role: "assistant", content: data.reply });
-          addMessage("Navigator", data.reply, "bot");
-
-          // Handle letter download offers
-          if (data.offerDownload) {
-            lastLetter = data.reply;
-            const downloadBtn = document.getElementById('downloadLetterBtn');
-            if (downloadBtn) {
-              downloadBtn.style.display = "inline-block";
+            body: JSON.stringify({
+              messages: messageHistory,
+              sessionToken: sessionToken
+            }),
+          })
+          .then(response => {
+            if (!response.ok) throw new Error("Failed to get welcome message");
+            return response.json();
+          })
+          .then(data => {
+            console.log("🎉 Welcome response received:", data);
+            
+            if (data.sessionToken) {
+              sessionToken = data.sessionToken;
+              localStorage.setItem('freemium-session', sessionToken);
             }
-          }
-
-          // Handle welcome message for freemium users
-          if (data.isWelcome && isFreemium) {
-            updateFreemiumStatus(data.messagesRemaining, data.upgradeUrl);
-          }
-
-        } catch (error) {
-          removeTyping();
-          addMessage("Error", error.message, "bot");
-          console.error('Chat error:', error);
+            
+            if (typeof data.messagesRemaining === 'number') {
+              messagesRemaining = data.messagesRemaining;
+              updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+            }
+            
+            messageHistory.push({ role: "assistant", content: data.reply });
+            addMessage("Navigator", data.reply, "bot");
+          })
+          .catch(error => {
+            console.error('Welcome message error:', error);
+            addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
+          });
+        } else {
+          addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
         }
+      }, 500);
 
-        chat.scrollTop = chat.scrollHeight;
-      }
-
-      function addMessage(sender, text, type) {
-        const messageContainer = document.createElement("div");
-        messageContainer.className = "message-container";
-        messageContainer.setAttribute("role", "group");
-        messageContainer.setAttribute("aria-label", `Message from ${sender}`);
-        
-        const msg = document.createElement("div");
-        msg.className = `message ${type}`;
-        
-        // Don't show "Navigator:" for bot messages to match the design
-        const senderText = type === "bot" ? "" : `<strong>${sender}:</strong><br>`;
-        msg.innerHTML = `${senderText}${formatMarkdown(text)}`;
-        
-        messageContainer.appendChild(msg);
-        chat.appendChild(messageContainer);
-        chat.scrollTop = chat.scrollHeight;
-      }
-
-      function formatMarkdown(text) {
-        return text
-          .replace(/^### (.*$)/gim, "<h3>$1</h3>")
-          .replace(/^## (.*$)/gim, "<h2>$1</h2>")
-          .replace(/^# (.*$)/gim, "<h1>$1</h1>")
-          .replace(/\*\*(.*?)\*\*/gim, "<strong>$1</strong>")
-          .replace(/\*(.*?)\*/gim, "<em>$1</em>")
-          .replace(/^- (.*$)/gim, "<ul><li>$1</li></ul>")
-          .replace(/\n/g, "<br>");
-      }
-
-     // Replace the welcome trigger section at the bottom of your frontend JavaScript:
-
-// Add initial greeting
-setTimeout(() => {
-  if (isFreemium) {
-    // For freemium users, trigger the welcome flow by sending just system message
-    console.log("🐛 Triggering welcome for freemium user");
-    console.log("🐛 Current message history:", messageHistory);
-    
-    // Send request to backend to trigger welcome
-    fetch(BACKEND_URL, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "X-Session-Token": sessionToken || ''
-      },
-      body: JSON.stringify({
-        messages: messageHistory, // This should just be the system message
-        sessionToken: sessionToken
-      }),
-    })
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to get welcome message");
-      return response.json();
-    })
-    .then(data => {
-      console.log("🎉 Welcome response received:", data);
-      
-      // Store session token
-      if (data.sessionToken) {
-        sessionToken = data.sessionToken;
-        localStorage.setItem('freemium-session', sessionToken);
-        console.log("🆔 Session token stored:", sessionToken.slice(0, 8) + '...');
-      }
-      
-      // Update freemium status
-      if (typeof data.messagesRemaining === 'number') {
-        messagesRemaining = data.messagesRemaining;
-        updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
-      }
-      
-      // Add welcome message to chat and history
-      messageHistory.push({ role: "assistant", content: data.reply });
-      addMessage("Navigator", data.reply, "bot");
-    })
-    .catch(error => {
-      console.error('Welcome message error:', error);
-      // Fallback welcome message
-      addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
+      // Run viewport change handler on page load and resize
+      handleViewportChange();
+      window.addEventListener('resize', handleViewportChange);
     });
-  } else {
-    // For paid users, show regular greeting
-    addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
-  }
-}, 500);
-    });
-
-    function downloadChat() {
-      const messages = document.querySelectorAll(".message");
-      let chatContent = "Medical Bill Navigator Chat\n\n";
-
-      messages.forEach((msg) => {
-        const text = msg.innerText || msg.textContent;
-        chatContent += text + "\n\n";
-      });
-
-      const blob = new Blob([chatContent], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "medical-bill-chat.txt";
-      link.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Handle mobile/desktop view automatically
-    function handleViewportChange() {
-      const mobileButtons = document.querySelector('.mobile-buttons');
-      const sideButtons = document.querySelector('.side-buttons');
-      
-      if (window.innerWidth <= 768) {
-        if (mobileButtons) mobileButtons.style.display = 'grid';
-        if (sideButtons) sideButtons.style.display = 'none';
-      } else {
-        if (mobileButtons) mobileButtons.style.display = 'none';
-        if (sideButtons) sideButtons.style.display = 'flex';
-      }
-    }
-
-    // Run on page load
-    handleViewportChange();
-    
-    // Run when window is resized
-    window.addEventListener('resize', handleViewportChange);
   </script>
 <script src="https://website-widgets.pages.dev/dist/sienna.min.js" defer></script>
 </body>
