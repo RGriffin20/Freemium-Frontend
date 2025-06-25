@@ -1070,13 +1070,58 @@
           .replace(/\n/g, "<br>");
       }
 
-      // Add initial greeting
-    setTimeout(() => {
+     // Replace the welcome trigger section at the bottom of your frontend JavaScript:
+
+// Add initial greeting
+setTimeout(() => {
   if (isFreemium) {
-    // Trigger welcome by sending empty message explicitly
-    input.value = ""; // Ensure it's empty
-    sendMessage();
+    // For freemium users, trigger the welcome flow by sending just system message
+    console.log("🐛 Triggering welcome for freemium user");
+    console.log("🐛 Current message history:", messageHistory);
+    
+    // Send request to backend to trigger welcome
+    fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "X-Session-Token": sessionToken || ''
+      },
+      body: JSON.stringify({
+        messages: messageHistory, // This should just be the system message
+        sessionToken: sessionToken
+      }),
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to get welcome message");
+      return response.json();
+    })
+    .then(data => {
+      console.log("🎉 Welcome response received:", data);
+      
+      // Store session token
+      if (data.sessionToken) {
+        sessionToken = data.sessionToken;
+        localStorage.setItem('freemium-session', sessionToken);
+        console.log("🆔 Session token stored:", sessionToken.slice(0, 8) + '...');
+      }
+      
+      // Update freemium status
+      if (typeof data.messagesRemaining === 'number') {
+        messagesRemaining = data.messagesRemaining;
+        updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+      }
+      
+      // Add welcome message to chat and history
+      messageHistory.push({ role: "assistant", content: data.reply });
+      addMessage("Navigator", data.reply, "bot");
+    })
+    .catch(error => {
+      console.error('Welcome message error:', error);
+      // Fallback welcome message
+      addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
+    });
   } else {
+    // For paid users, show regular greeting
     addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
   }
 }, 500);
