@@ -63,7 +63,7 @@
       letter-spacing: 1px;
     }
 
-    /* 🆕 FREEMIUM STATUS BAR */
+    /* FREEMIUM STATUS BAR */
     .freemium-status {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
@@ -101,7 +101,7 @@
       transform: translateY(-1px);
     }
 
-    /* 🆕 UPGRADE MODAL */
+    /* UPGRADE MODAL */
     .upgrade-modal {
       position: fixed;
       top: 0;
@@ -211,20 +211,6 @@
       min-height: 300px;
     }
 
-    /* Screen reader only content */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* Ensure good contrast for accessibility */
     .message {
       margin: 10px 0;
       padding: 12px 16px;
@@ -302,7 +288,6 @@
       gap: 15px;
     }
 
-    /* Base styles for all interactive elements */
     .side-button,
     .resource-button,
     .mobile-button {
@@ -324,10 +309,6 @@
       position: relative;
       z-index: 100;
       pointer-events: auto;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
     }
 
     .side-button:hover,
@@ -371,21 +352,14 @@
       display: none;
     }
 
-    #downloadLetterBtn {
-      background-color: #4CAF50;
-    }
-
-    /* Hide resource buttons in desktop view since they're in the side panel */
     .resource-buttons {
       display: none;
     }
 
-    /* Hide mobile buttons on desktop */
     .mobile-buttons {
       display: none;
     }
 
-    /* Desktop specific button fixes */
     @media (min-width: 769px) {
       .side-buttons {
         position: relative;
@@ -403,10 +377,6 @@
         margin-bottom: 5px;
         width: 100%;
         box-sizing: border-box;
-      }
-      
-      .side-buttons .side-button:hover {
-        background-color: #f5f8ff !important;
       }
       
       .main-content {
@@ -465,12 +435,10 @@
         height: 300px;
       }
 
-      /* Hide desktop side-buttons and show only the mobile ones */
       .side-buttons {
         display: none;
       }
 
-      /* Show a grid of buttons at the top in mobile view */
       .mobile-buttons {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -502,7 +470,7 @@
 
       #userInput {
         width: 100%;
-        padding-right: 60px; /* Make room for send button */
+        padding-right: 60px;
       }
 
       button.send-btn {
@@ -516,16 +484,6 @@
         justify-content: center;
       }
 
-      #fileUpload {
-        margin-top: 10px;
-        padding: 10px;
-      }
-
-      #fileInput {
-        width: 100%;
-      }
-
-      /* Show resource buttons in mobile view at the bottom */
       .resource-buttons {
         display: flex;
         flex-direction: column;
@@ -536,10 +494,6 @@
       .resource-button {
         padding: 10px;
         font-size: 14px;
-      }
-      
-      .resource-button .icon {
-        margin-right: 10px;
       }
 
       .freemium-status {
@@ -560,13 +514,13 @@
       <div class="title">MEDICAL BILL NAVIGATOR</div>
     </div>
 
-    <!-- 🆕 FREEMIUM STATUS BAR -->
-    <div class="freemium-status" id="freemiumStatus" style="display: none;">
-      <div class="status-text" id="statusText"></div>
-      <a href="#" class="upgrade-btn" id="upgradeBtn">Upgrade Now</a>
+    <!-- FREEMIUM STATUS BAR -->
+    <div class="freemium-status" id="freemiumStatus">
+      <div class="status-text" id="statusText">✨ 2 free messages remaining</div>
+      <a href="https://www.medcoursepro.com/forpatients" class="upgrade-btn" id="upgradeBtn">Upgrade Now</a>
     </div>
 
-    <!-- 🆕 UPGRADE MODAL -->
+    <!-- UPGRADE MODAL -->
     <div class="upgrade-modal" id="upgradeModal">
       <div class="upgrade-modal-content">
         <h2>🚀 Unlock Full Access</h2>
@@ -587,7 +541,7 @@
       </div>
     </div>
 
-    <!-- Mobile-only buttons that appear at the top -->
+    <!-- Mobile-only buttons -->
     <div class="mobile-buttons">
       <button class="mobile-button" id="mobileDownloadAppealBtn">
         <div class="icon">📄</div>
@@ -643,13 +597,6 @@
       <div class="chat-section">
         <div id="chat">
           <!-- Chat messages will appear here -->
-          <div class="starter-buttons">
-            <button id="btn1">Can you help me understand my medical bill?</button>
-            <button id="btn2">What can I do if I can't pay my bill?</button>
-            <button id="btn3">Ask me a question about your medical bill.</button>
-            <button id="btn4">Use the step-by-step guide to help you.</button>
-            <button id="downloadLetterBtn" style="display: none;">📄 Download Appeal Letter</button>
-          </div>
         </div>
 
         <div class="input-area" role="search" aria-label="Send message to Medical Bill Navigator">
@@ -683,12 +630,12 @@
   </div>
 
   <script>
-    // 🆕 Clean Variable Declarations
+    // Clean Variable Declarations
     let typingInterval;
     let lastLetter = "";
     let uploadedFile = null;
     let sessionToken = localStorage.getItem('freemium-session') || null;
-    let messagesRemaining = null;
+    let messagesRemaining = 2; // Start with 2 for new users
     let isFreemium = true;
     
     const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/chat";
@@ -701,44 +648,43 @@
       }
     ];
 
-    // 🆕 Enhanced Freemium Status Update
+    // Enhanced Freemium Status Update
     function updateFreemiumStatus(remaining, upgradeUrl) {
       const statusBar = document.getElementById('freemiumStatus');
       const statusText = document.getElementById('statusText');
       const upgradeBtn = document.getElementById('upgradeBtn');
       
-      if (remaining === null || remaining === undefined) {
-        statusBar.style.display = 'none';
-        return;
-      }
-      
-      statusBar.style.display = 'flex';
-      upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
-      
-      if (remaining === 0) {
-        statusBar.className = 'freemium-status warning';
-        statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
+      if (isFreemium) {
+        statusBar.style.display = 'flex';
+        upgradeBtn.href = upgradeUrl || 'https://www.medcoursepro.com/forpatients';
         
-        // Disable input when no messages remaining
-        const input = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        if (input) {
-          input.disabled = true;
-          input.placeholder = 'Upgrade to continue chatting...';
+        if (remaining === 0) {
+          statusBar.className = 'freemium-status warning';
+          statusText.textContent = '🔒 Free preview complete! Upgrade for unlimited access.';
+          
+          // Disable input when no messages remaining
+          const input = document.getElementById('userInput');
+          const sendBtn = document.getElementById('sendBtn');
+          if (input) {
+            input.disabled = true;
+            input.placeholder = 'Upgrade to continue chatting...';
+          }
+          if (sendBtn) {
+            sendBtn.disabled = true;
+          }
+          
+          // Show upgrade modal after a short delay
+          setTimeout(() => showUpgradeModal(), 2000);
+          
+        } else if (remaining === 1) {
+          statusBar.className = 'freemium-status warning';
+          statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
+        } else {
+          statusBar.className = 'freemium-status';
+          statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
         }
-        if (sendBtn) {
-          sendBtn.disabled = true;
-        }
-        
-        // Show upgrade modal after a short delay
-        setTimeout(() => showUpgradeModal(), 2000);
-        
-      } else if (remaining === 1) {
-        statusBar.className = 'freemium-status warning';
-        statusText.textContent = `⚡ Last free message! Upgrade to continue.`;
       } else {
-        statusBar.className = 'freemium-status';
-        statusText.textContent = `✨ ${remaining} free message${remaining === 1 ? '' : 's'} remaining`;
+        statusBar.style.display = 'none';
       }
     }
 
@@ -757,7 +703,7 @@
       }
     });
 
-    // 🚫 Block Premium Features
+    // Block Premium Features
     function blockPremiumFeature(featureType) {
       const chat = document.getElementById('chat');
       const blockMessage = document.createElement("div");
@@ -809,19 +755,19 @@
       }
     }
 
-    // 🆕 Enhanced Send Message Function
+    // Enhanced Send Message Function
     async function sendMessage() {
       const input = document.getElementById('userInput');
       const message = input.value.trim();
       if (!message) return;
 
       // Check if session is expired (no messages remaining)
-      if (messagesRemaining === 0) {
+      if (messagesRemaining <= 0) {
         showUpgradeModal();
         return;
       }
 
-      // 🚫 Check for premium features in user input
+      // Check for premium features in user input
       const premiumTriggers = [
         'upload', 'document', 'pdf', 'denial', 'appeal', 'cpt code', 
         'claim number', 'modifier', 'search policy', 'look up regulation'
@@ -850,7 +796,7 @@
           sessionToken: sessionToken
         };
 
-        // 🚫 Block file uploads for freemium
+        // Block file uploads for freemium
         if (uploadedFile && isFreemium) {
           removeTyping();
           blockPremiumFeature("Document Upload");
@@ -881,21 +827,21 @@
 
         const data = await response.json();
 
-        // 🆔 Store session token
+        // Store session token
         if (data.sessionToken) {
           sessionToken = data.sessionToken;
           localStorage.setItem('freemium-session', sessionToken);
         }
 
-        // 🚀 Handle upgrade prompts
-        if (data.isUpgradePrompt) {
-          setTimeout(() => showUpgradeModal(), 1000);
-        }
-
-        // 📊 Update freemium status
+        // IMPORTANT: Update message count BEFORE checking for upgrades
         if (typeof data.messagesRemaining === 'number') {
           messagesRemaining = data.messagesRemaining;
           updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
+        }
+
+        // Handle upgrade prompts
+        if (data.isUpgradePrompt) {
+          setTimeout(() => showUpgradeModal(), 1000);
         }
 
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -908,10 +854,6 @@
         // Handle letter download offers
         if (data.offerDownload) {
           lastLetter = data.reply;
-          const downloadBtn = document.getElementById('downloadLetterBtn');
-          if (downloadBtn) {
-            downloadBtn.style.display = "inline-block";
-          }
         }
 
       } catch (error) {
@@ -1022,34 +964,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      // Show initial freemium status right away
+      updateFreemiumStatus(2); // Start with 2 messages
+
       const chat = document.getElementById('chat');
       const input = document.getElementById('userInput');
       const fileInput = document.getElementById('fileInput');
       const fileLabel = document.getElementById('fileLabel');
-      const downloadBtn = document.getElementById('downloadLetterBtn');
-
-      // Force fix any overlay issues that might block buttons
-      function forceFixOverlays() {
-        const highZElements = Array.from(document.querySelectorAll('*')).filter(el => {
-          const style = window.getComputedStyle(el);
-          return parseInt(style.zIndex) > 5000;
-        });
-        
-        highZElements.forEach(el => {
-          if (!el.closest('.side-buttons') && !el.closest('.container')) {
-            el.style.zIndex = '1';
-          }
-        });
-        
-        const sideButtons = document.querySelector('.side-buttons');
-        if (sideButtons) {
-          sideButtons.style.zIndex = '99999';
-          sideButtons.style.position = 'relative';
-        }
-      }
-
-      forceFixOverlays();
-      setTimeout(forceFixOverlays, 2000);
 
       // Get button references
       const downloadAppealBtn = document.getElementById('downloadAppealBtn');
@@ -1063,18 +984,9 @@
       const mobileStepByStepBtn = document.getElementById('mobileStepByStepBtn');
       const mobileDownloadChatBtn = document.getElementById('mobileDownloadChatBtn');
 
-      // Ensure buttons exist before adding event listeners
-      const btn1 = document.getElementById('btn1');
-      if (btn1) {
-        btn1.onclick = () => presetMessage('Can you help me understand my medical bill?');
-        document.getElementById('btn2').onclick = () => presetMessage("What can I do if I can't pay my bill?");
-        document.getElementById('btn3').onclick = () => presetMessage("Ask me a question about your medical bill.");
-        document.getElementById('btn4').onclick = () => presetMessage("Use the step-by-step guide to help you.");
-      }
-      
       document.getElementById('sendBtn').onclick = sendMessage;
 
-      // Desktop side buttons functionality with single event binding
+      // Desktop side buttons functionality
       function setupButton(button, message) {
         if (!button) return;
         
@@ -1118,12 +1030,12 @@
         }
       });
 
-      // 🆕 Enhanced File Input Handler with Freemium Blocking
+      // Enhanced File Input Handler with Freemium Blocking
       fileInput.addEventListener('change', async () => {
         const file = fileInput.files[0];
         if (!file) return;
 
-        // 🚫 Block file uploads for freemium users
+        // Block file uploads for freemium users
         if (isFreemium) {
           fileInput.value = ''; // Clear the input
           blockPremiumFeature("Document Upload & Analysis");
@@ -1155,12 +1067,6 @@
               base64: base64
             };
             
-            console.log("📤 File prepared for upload:", {
-              name: uploadedFile.name,
-              type: uploadedFile.type,
-              base64Length: uploadedFile.base64.length
-            });
-
             input.value = "Please analyze this document.";
             sendMessage();
           };
@@ -1171,11 +1077,7 @@
         }
       });
 
-      if (downloadBtn) {
-        downloadBtn.addEventListener('click', downloadLetter);
-      }
-
-      // 🆕 Enhanced Welcome Message Trigger
+      // Enhanced Welcome Message Trigger
       setTimeout(() => {
         if (isFreemium) {
           console.log("🐛 Triggering welcome for freemium user");
@@ -1187,7 +1089,7 @@
               "X-Session-Token": sessionToken || ''
             },
             body: JSON.stringify({
-              messages: messageHistory,
+              messages: [], // Send empty messages array for welcome
               sessionToken: sessionToken
             }),
           })
@@ -1203,20 +1105,22 @@
               localStorage.setItem('freemium-session', sessionToken);
             }
             
+            // Update remaining messages from server response
             if (typeof data.messagesRemaining === 'number') {
               messagesRemaining = data.messagesRemaining;
               updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
             }
             
-            messageHistory.push({ role: "assistant", content: data.reply });
-            addMessage("Navigator", data.reply, "bot");
+            // Add welcome message to chat
+            if (data.reply) {
+              messageHistory.push({ role: "assistant", content: data.reply });
+              addMessage("Navigator", data.reply, "bot");
+            }
           })
           .catch(error => {
             console.error('Welcome message error:', error);
             addMessage("Navigator", "👋 Welcome to the Medical Bill Navigator! How can I help you today?", "bot");
           });
-        } else {
-          addMessage("Navigator", "Hello! I'm your Medical Bill Navigator. How can I help you today?", "bot");
         }
       }, 500);
 
