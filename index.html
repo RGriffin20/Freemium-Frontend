@@ -505,6 +505,115 @@
   </style>
 </head>
 <body>
+  
+  <!-- ✅ TERMS MODAL - RIGHT AFTER <body> -->
+  <div id="termsModal" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  ">
+    <div style="
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      margin: 20px;
+    ">
+      <h2 style="color: #1a3b5d; margin-top: 0; text-align: center;">
+        🏥 Medical Bill Navigator - Terms & Privacy
+      </h2>
+      
+      <div style="font-size: 14px; line-height: 1.6; color: #333; margin-bottom: 25px;">
+        <strong>Service Description:</strong><br>
+        This Medical Bill Navigator helps you understand medical bills, insurance claims, and healthcare billing processes. Information provided is for educational purposes only and does not constitute medical, legal, or financial advice.<br><br>
+        
+        <strong>PHI Protection:</strong><br>
+        Our service processes medical billing documents that may contain Protected Health Information (PHI). We implement automatic PHI redaction - all personal identifiers are detected and removed immediately. We do not store PHI in identifiable form.<br><br>
+        
+        <strong>Important Disclaimers:</strong><br>
+        • We do not provide medical diagnosis or treatment<br>
+        • We do not guarantee claim approval or appeal success<br>
+        • Always verify information with your providers and insurers<br>
+        • You are responsible for verifying all billing information<br><br>
+        
+        <strong>Privacy & Data:</strong><br>
+        We process information temporarily during your session only using encrypted transmission. We are not a covered entity under HIPAA but follow healthcare-grade security practices.
+      </div>
+      
+      <div style="
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #1a3b5d;
+        margin-bottom: 25px;
+      ">
+        <label style="
+          display: flex;
+          align-items: flex-start;
+          cursor: pointer;
+          font-size: 15px;
+          font-weight: bold;
+          color: #1a3b5d;
+        ">
+          <input 
+            type="checkbox" 
+            id="termsCheckbox" 
+            style="
+              margin-right: 12px;
+              margin-top: 2px;
+              transform: scale(1.2);
+              accent-color: #1a3b5d;
+            "
+          >
+          <span>
+            I understand this is for educational purposes only, that PHI will be automatically redacted, and I agree to use this service responsibly.
+          </span>
+        </label>
+      </div>
+      
+      <div style="text-align: center;">
+        <button 
+          id="continueBtn" 
+          disabled
+          style="
+            background: #6c757d;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: not-allowed;
+            transition: all 0.3s ease;
+          "
+        >
+          Continue to Medical Bill Navigator
+        </button>
+      </div>
+      
+      <p style="
+        text-align: center;
+        font-size: 12px;
+        color: #666;
+        margin-top: 15px;
+        margin-bottom: 0;
+      ">
+        Your acceptance will be remembered for this browser session.
+      </p>
+    </div>
+  </div>
+
   <div class="container">
     <div class="header">
       <div class="logo">
@@ -629,13 +738,73 @@
     </div>
   </div>
 
+  <!-- ✅ TERMS JAVASCRIPT - BEFORE YOUR MAIN SCRIPT -->
   <script>
-    // ✅ FIXED: Clean Variable Declarations - NO localStorage usage
+    // Terms Modal Logic
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('termsModal');
+      const checkbox = document.getElementById('termsCheckbox');
+      const continueBtn = document.getElementById('continueBtn');
+      
+      console.log('🔍 Terms modal found:', !!modal);
+      
+      // Check if user has already accepted terms in this session
+      if (sessionStorage.getItem('medicalBillNavTermsAccepted') === 'true') {
+        hideModal();
+      } else {
+        showModal();
+      }
+      
+      // Enable/disable continue button based on checkbox
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          continueBtn.disabled = false;
+          continueBtn.style.background = '#28a745';
+          continueBtn.style.cursor = 'pointer';
+          continueBtn.textContent = '✓ Continue to Medical Bill Navigator';
+        } else {
+          continueBtn.disabled = true;
+          continueBtn.style.background = '#6c757d';
+          continueBtn.style.cursor = 'not-allowed';
+          continueBtn.textContent = 'Continue to Medical Bill Navigator';
+        }
+      });
+      
+      // Handle continue button click
+      continueBtn.addEventListener('click', function() {
+        if (checkbox.checked) {
+          sessionStorage.setItem('medicalBillNavTermsAccepted', 'true');
+          sessionStorage.setItem('medicalBillNavTermsAcceptedTime', new Date().toISOString());
+          console.log('Medical Bill Navigator terms accepted:', new Date().toISOString());
+          hideModal();
+        }
+      });
+      
+      function showModal() {
+        if (modal) {
+          modal.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          console.log('✅ Terms modal shown');
+        }
+      }
+      
+      function hideModal() {
+        if (modal) {
+          modal.style.display = 'none';
+          document.body.style.overflow = 'auto';
+          console.log('✅ Terms modal hidden');
+        }
+      }
+    });
+  </script>
+
+  <script>
+    // ✅ YOUR EXISTING MAIN SCRIPT STARTS HERE
     let typingInterval;
     let lastLetter = "";
     let uploadedFile = null;
-    let sessionToken = null; // ✅ CHANGED: Don't get from localStorage anymore
-    let messagesRemaining = 2; // Start with 2 for new users
+    let sessionToken = null;
+    let messagesRemaining = 2;
     let isFreemium = true;
     
     const BACKEND_URL = "https://medical-navigator-freemium-backend.vercel.app/api/chat";
@@ -793,7 +962,7 @@
       try {
         const requestBody = {
           messages: messageHistory,
-          sessionToken: sessionToken // ✅ CHANGED: This will be null for new sessions
+          sessionToken: sessionToken
         };
 
         // Block file uploads for freemium
@@ -827,13 +996,12 @@
 
         const data = await response.json();
 
-        // ✅ CHANGED: Store session token in memory only (not localStorage)
         if (data.sessionToken) {
           sessionToken = data.sessionToken;
           console.log("🆕 Session token received:", sessionToken.slice(0, 20) + '...');
         }
 
-        // IMPORTANT: Update message count BEFORE checking for upgrades
+        // Update message count BEFORE checking for upgrades
         if (typeof data.messagesRemaining === 'number') {
           messagesRemaining = data.messagesRemaining;
           updateFreemiumStatus(messagesRemaining, data.upgradeUrl);
@@ -965,7 +1133,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       // Show initial freemium status right away
-      updateFreemiumStatus(2); // Start with 2 messages
+      updateFreemiumStatus(2);
 
       const chat = document.getElementById('chat');
       const input = document.getElementById('userInput');
@@ -1037,7 +1205,7 @@
 
         // Block file uploads for freemium users
         if (isFreemium) {
-          fileInput.value = ''; // Clear the input
+          fileInput.value = '';
           blockPremiumFeature("Document Upload & Analysis");
           return;
         }
@@ -1077,7 +1245,7 @@
         }
       });
 
-      // ✅ FIXED: Enhanced Welcome Message Trigger - NO localStorage
+      // Enhanced Welcome Message Trigger
       setTimeout(() => {
         if (isFreemium) {
           console.log("🐛 Triggering welcome for freemium user");
@@ -1086,11 +1254,11 @@
             method: "POST",
             headers: { 
               "Content-Type": "application/json",
-              "X-Session-Token": sessionToken || '' // This will be empty for new sessions
+              "X-Session-Token": sessionToken || ''
             },
             body: JSON.stringify({
-              messages: [], // Send empty messages array for welcome
-              sessionToken: sessionToken // This will be null for new sessions
+              messages: [],
+              sessionToken: sessionToken
             }),
           })
           .then(response => {
@@ -1100,7 +1268,6 @@
           .then(data => {
             console.log("🎉 Welcome response received:", data);
             
-            // ✅ CHANGED: Store session token in memory only
             if (data.sessionToken) {
               sessionToken = data.sessionToken;
               console.log("🆕 Session stored in memory:", sessionToken.slice(0, 20) + '...');
@@ -1130,6 +1297,6 @@
       window.addEventListener('resize', handleViewportChange);
     });
   </script>
-<script src="https://website-widgets.pages.dev/dist/sienna.min.js" defer></script>
+  <script src="https://website-widgets.pages.dev/dist/sienna.min.js" defer></script>
 </body>
 </html>
