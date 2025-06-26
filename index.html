@@ -630,11 +630,11 @@
   </div>
 
   <script>
-    // Clean Variable Declarations
+    // ✅ FIXED: Clean Variable Declarations - NO localStorage usage
     let typingInterval;
     let lastLetter = "";
     let uploadedFile = null;
-    let sessionToken = localStorage.getItem('freemium-session') || null;
+    let sessionToken = null; // ✅ CHANGED: Don't get from localStorage anymore
     let messagesRemaining = 2; // Start with 2 for new users
     let isFreemium = true;
     
@@ -755,7 +755,7 @@
       }
     }
 
-    // Enhanced Send Message Function
+    // ✅ FIXED: Enhanced Send Message Function
     async function sendMessage() {
       const input = document.getElementById('userInput');
       const message = input.value.trim();
@@ -793,7 +793,7 @@
       try {
         const requestBody = {
           messages: messageHistory,
-          sessionToken: sessionToken
+          sessionToken: sessionToken // ✅ CHANGED: This will be null for new sessions
         };
 
         // Block file uploads for freemium
@@ -827,10 +827,10 @@
 
         const data = await response.json();
 
-        // Store session token
+        // ✅ CHANGED: Store session token in memory only (not localStorage)
         if (data.sessionToken) {
           sessionToken = data.sessionToken;
-          localStorage.setItem('freemium-session', sessionToken);
+          console.log("🆕 Session token received:", sessionToken.slice(0, 20) + '...');
         }
 
         // IMPORTANT: Update message count BEFORE checking for upgrades
@@ -1077,7 +1077,7 @@
         }
       });
 
-      // Enhanced Welcome Message Trigger
+      // ✅ FIXED: Enhanced Welcome Message Trigger - NO localStorage
       setTimeout(() => {
         if (isFreemium) {
           console.log("🐛 Triggering welcome for freemium user");
@@ -1086,11 +1086,11 @@
             method: "POST",
             headers: { 
               "Content-Type": "application/json",
-              "X-Session-Token": sessionToken || ''
+              "X-Session-Token": sessionToken || '' // This will be empty for new sessions
             },
             body: JSON.stringify({
               messages: [], // Send empty messages array for welcome
-              sessionToken: sessionToken
+              sessionToken: sessionToken // This will be null for new sessions
             }),
           })
           .then(response => {
@@ -1100,9 +1100,10 @@
           .then(data => {
             console.log("🎉 Welcome response received:", data);
             
+            // ✅ CHANGED: Store session token in memory only
             if (data.sessionToken) {
               sessionToken = data.sessionToken;
-              localStorage.setItem('freemium-session', sessionToken);
+              console.log("🆕 Session stored in memory:", sessionToken.slice(0, 20) + '...');
             }
             
             // Update remaining messages from server response
